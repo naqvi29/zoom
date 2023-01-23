@@ -258,6 +258,7 @@
       <!-- <button class="animated-button" type="submit">Save</button> -->
       <div class="text-center">
       <button class="btn btn btn-success" type="submit">Save</button>
+      <a href="/clear-form/{{form.id}}" onclick="return confirm('Are you sure you want to clear this form?');"><button class="btn btn btn-danger ml-4" type="button">Clear Form</button></a>
       </div>
     </form>
     {% else %}
@@ -388,36 +389,36 @@
         <div class="form-group">
           <label for="exampleInputEmail1">BUSINESS_DESCRIPTION</label>
           <input type="text" name="BUSINESS_DESCRIPTION" class="form-control"
-            id="exampleInputEmail1" aria-describedby="emailHelp" value="{{entry.data['NAME_OF_COMPANY_TWO']}}" required>
+            id="exampleInputEmail1" aria-describedby="emailHelp" required>
         </div>
         <div class="form-group">
           <label for="exampleInputEmail1">TYPE OF BUSINESS_DESCRIPTION_2</label>
           <input type="text" name="BUSINESS_DESCRIPTION_2" class="form-control"
-            id="exampleInputEmail1" aria-describedby="emailHelp" value="{{entry.data['TYPE_OF_COMPANY_TWO']}}" required>
+            id="exampleInputEmail1" aria-describedby="emailHelp" required>
         </div>
         <div class="form-group">
           <label for="exampleInputEmail1">PURPOSE_JV</label>
           <input type="text" name="PURPOSE_JV"
             class="form-control" id="exampleInputEmail1"
-            aria-describedby="emailHelp" value="{{entry.data['COMPANY_TWO_REGISTRATION_NUMBER']}}" required>
+            aria-describedby="emailHelp" required>
         </div>
         <div class="form-group">
           <label for="exampleInputEmail1">TIME_PERIOD</label>
           <input type="text" name="TIME_PERIOD" class="form-control"
-            id="exampleInputEmail1" aria-describedby="emailHelp" value="{{entry.data['AUTHORITY_TWO_NAME']}}" required>
+            id="exampleInputEmail1" aria-describedby="emailHelp" required>
         </div>
         <div class="form-group">
           <label for="exampleInputEmail1">EMIRATE</label>
           <input type="text" name="EMIRATE"
             class="form-control" id="exampleInputEmail1"
-            aria-describedby="emailHelp" value="{{entry.data['AUTHORITY_TWO_OFFICE_ADDRESS']}}" required>
+            aria-describedby="emailHelp" required>
         </div>
         <div class="form-group">
           <label for="exampleInputEmail1">DAY_OF</label>
           <input type="text"
             name="DAY_OF"
             class="form-control" id="exampleInputEmail1"
-            aria-describedby="emailHelp" value="{{entry.data['TITLE_OF_PERSON_REPRESENTING_THE_AUTHORITY_TWO']}}" required>
+            aria-describedby="emailHelp" required>
         </div>
       </div>
 

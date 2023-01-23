@@ -194,6 +194,7 @@
       <!-- <button class="animated-button" type="submit">Save</button> -->
       <div class="text-center">
       <button class="btn btn btn-success" type="submit">Save</button>
+      <a href="/clear-form/{{form.id}}" onclick="return confirm('Are you sure you want to clear this form?');"><button class="btn btn btn-danger ml-4" type="button">Clear Form</button></a>
       </div>
     </form>
     {% else %}

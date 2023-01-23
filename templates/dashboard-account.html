@@ -73,6 +73,21 @@
             {% endif %}
             </select>
           </div>
+          <div class="form-group">
+            <label for="exampleInputPassword1">Phone Email on pdf scrapping</label>
+            <select disabled name="phone_email_pdf" id="phone_email_pdf" class="form-control">
+              {% if user.phone_email_pdf == "enable" %}
+              <option selected value="enable">Enable</option>
+              <option value="disable">Disable</option>
+              {% elif user.phone_email_pdf == "disable" %}
+              <option value="enable">Enable</option>
+              <option selected value="disable">Disable</option>
+              {% else %}
+              <option selected value="enable">Enable</option>
+              <option  value="disable">Disable</option>
+              {% endif %}
+            </select>
+          </div>
           {% endif %}
 
 
@@ -94,6 +109,7 @@
       document.getElementById('password').type = 'text';
       {% if admin %}
       document.getElementById('auto_del').disabled = false;
+      document.getElementById('phone_email_pdf').disabled = false;
       {% endif %}
 
 

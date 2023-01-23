@@ -24,7 +24,8 @@ app = Flask(__name__)
 
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'LAwrence1234**'
+app.config['MYSQL_PASSWORD'] = ''
+# app.config['MYSQL_PASSWORD'] = 'LAwrence1234**'
 app.config['MYSQL_DB'] = 'zoomcare'
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 # app.config['MYSQL_PORT'] = 3308
@@ -43,17 +44,26 @@ def allowed_file(filename):
 @app.route('/')
 def index():    
     if 'loggedin' in session:
-        return render_template('index.html',loggedin=True)
+        return render_template('index.html',loggedin=True,home=True)
     else:
-        return render_template('index.html')
+        return render_template('index.html',home=True)
+
 
 @app.route('/pricing')
 def pricing():
-    return render_template('pricing.html')
+    if 'loggedin' in session:
+        return render_template('pricing.html',loggedin=True, pricing=True)
+    else:
+        return render_template('pricing.html',pricing=True)
+
 
 @app.route('/faq')
 def faq():
-    return render_template('faq.html')
+    if 'loggedin' in session:
+        return render_template('faq.html',loggedin=True,faq=True)
+    else:
+        return render_template('faq.html',faq=True)
+
 
 @app.route('/login', methods=['GET','POST'])
 def login():
@@ -76,7 +86,9 @@ def login():
             session['type'] = user['type']
             session['pic'] = user['pic']
             session['password'] = user['password']
-            session['auto_del'] = user['auto_del']
+            if user['type']=="admin":
+                session['auto_del'] = user['auto_del']
+                session['phone_email_pdf'] = user['phone_email_pdf']
             return redirect(url_for("dashboard"))
         else:
             return render_template("login.html", error="Your Account is inactive!")
@@ -141,6 +153,23 @@ def select_plan(id):
         price = "99"
         plan = "ultra"
     return render_template('checkout.html', price=price, plan=plan, key=stripe_keys['publishable_key'], amount=float(price)*100)
+
+@app.route('/select-plan2/<int:id>', methods=['GET','POST'])
+def select_plan2(id):
+    # demo 
+    if id == 1:
+        price = "19"
+        plan = "starter"
+    elif id == 2:
+        price = "29"
+        plan = "basic"
+    elif id == 3:
+        price = "49"
+        plan = "professional"
+    elif id == 4:
+        price = "99"
+        plan = "ultra"
+    return render_template('checkout2.html', price=price, plan=plan, key=stripe_keys['publishable_key'], amount=float(price)*100)
     
 @app.route('/charge', methods=['POST'])
 def charge():
@@ -205,6 +234,7 @@ def account():
             image = request.files["pic"]
             if session['type'] == "admin":
                 auto_del = request.form.get("auto_del")
+                phone_email_pdf = request.form.get("phone_email_pdf")
             else:
                 auto_del = None
             if image and allowed_file(image.filename):
@@ -214,7 +244,7 @@ def account():
                 cursor = mysql.connection.cursor()
                 
                 if session['type'] == "admin":
-                    cursor.execute('UPDATE USERS SET name=%s,email=%s,password=%s,pic=%s,auto_del=%s where id=%s;',(name,email,password,filename,auto_del,session['userid']))
+                    cursor.execute('UPDATE USERS SET name=%s,email=%s,password=%s,pic=%s,auto_del=%s,phone_email_pdf=%s where id=%s;',(name,email,password,filename,auto_del,phone_email_pdf,session['userid']))
                 else:
                     cursor.execute('UPDATE USERS SET name=%s,email=%s,password=%s,pic=%s where id=%s;',(name,email,password,filename,session['userid']))
                 mysql.connection.commit()
@@ -222,7 +252,7 @@ def account():
             else:
                 cursor = mysql.connection.cursor()
                 if session['type'] == "admin":
-                    cursor.execute('UPDATE USERS SET name=%s,email=%s,password=%s,auto_del=%s where id=%s;',(name,email,password,auto_del,session['userid']))
+                    cursor.execute('UPDATE USERS SET name=%s,email=%s,password=%s,auto_del=%s,phone_email_pdf=%s where id=%s;',(name,email,password,auto_del,phone_email_pdf,session['userid']))
                 else:
                     cursor.execute('UPDATE USERS SET name=%s,email=%s,password=%s where id=%s;',(name,email,password,session['userid']))
                 mysql.connection.commit()
@@ -230,10 +260,14 @@ def account():
             session['name'] = name
             session['email'] = email
             session['password'] = password
-            session['auto_del'] = auto_del
+            if session['type'] == "admin":
+                session['auto_del'] = auto_del
+                session['phone_email_pdf'] = phone_email_pdf
             return redirect(url_for("account"))
 
         user = {"id":session['userid'],"name":session['name'],"email":session['email'],"type":session['type'],"pic":session['pic'],"password":session['password'],"auto_del":session['auto_del']}
+        if session['type']=="admin":
+            user = {"id":session['userid'],"name":session['name'],"email":session['email'],"type":session['type'],"pic":session['pic'],"password":session['password'],"auto_del":session['auto_del'],"phone_email_pdf":session['phone_email_pdf']}
         if session['type'] == "admin":
             return render_template("dashboard-account.html",user=user,admin=True)
         else:
@@ -280,6 +314,16 @@ def select_form(form_id):
                 return render_template("contract2.html",user=user,form=form,entry=entry)
             else:
                 return render_template("contract2.html",user=user,form=form,entry=None)
+    else:
+        return redirect(url_for('login'))
+
+@app.route("/clear-form/<int:form_id>")
+def clear_form(form_id):
+    if 'loggedin' in session:        
+        cursor = mysql.connection.cursor() 
+        cursor.execute('DELETE from form_entries where form_id=%s and user_id=%s;',(form_id,session['userid']))
+        mysql.connection.commit()
+        return redirect("/select-form/"+str(form_id))
     else:
         return redirect(url_for('login'))
 
@@ -448,25 +492,25 @@ def save_form(form_id):
             ATTORNEY_SIGN = request.form.get("ATTORNEY_SIGN")
 
             dict = {
-                "NAME" : request.form.get("NAME") ,
-                "COUNTRY" : request.form.get("COUNTRY") ,
-                "PASSPORT_NO" : request.form.get("PASSPORT_NO") ,
-                "RESIDENT_EMIRATES_ID_NO" : request.form.get("RESIDENT_EMIRATES_ID_NO") ,
-                "TRAFFIC_PLATE_NO" : request.form.get("TRAFFIC_PLATE_NO") ,
-                "AUTHORIZER_NAME" : request.form.get("AUTHORIZER_NAME") ,
-                "AUTHORIZER_COUNTRY" : request.form.get("AUTHORIZER_COUNTRY") ,
-                "AUTHORIZER_PASSPORT_NO" : request.form.get("AUTHORIZER_PASSPORT_NO") ,
-                "AUTHORIZER_RESIDENT_EMIRATES_ID_NO" : request.form.get("AUTHORIZER_RESIDENT_EMIRATES_ID_NO") ,
-                "TRAFFIC_PLATE_NO" : request.form.get("TRAFFIC_PLATE_NO") ,
-                "VEHICLE_TYPE" : request.form.get("VEHICLE_TYPE") ,
-                "VEHICLE_COLOR" : request.form.get("VEHICLE_COLOR") ,
-                "VEHICLE_YEAR" : request.form.get("VEHICLE_YEAR") ,
-                "ENGINE_NO" : request.form.get("ENGINE_NO") ,
-                "CHASSIS_NO" : request.form.get("CHASSIS_NO") ,
-                "OWNER_NAME" : request.form.get("OWNER_NAME") ,
-                "OWNER_SIGN" : request.form.get("OWNER_SIGN") ,
-                "ATTORNEY_NAME" : request.form.get("ATTORNEY_NAME") ,
-                "ATTORNEY_SIGN" : request.form.get("ATTORNEY_SIGN") 
+                "NAME" : name ,
+                "COUNTRY" : country ,
+                "PASSPORT_NO" : passport ,
+                "RESIDENT_EMIRATES_ID_NO" : id_no ,
+                "TRAFFIC_PLATE_NO" : plate_no ,
+                "AUTHORIZER_NAME" : name_2 ,
+                "AUTHORIZER_COUNTRY" : country_2 ,
+                "AUTHORIZER_PASSPORT_NO" : passport_2 ,
+                "AUTHORIZER_RESIDENT_EMIRATES_ID_NO" : id_no_2 ,
+                "TRAFFIC_PLATE_NO" : TRAFFIC_PLATE_NO ,
+                "VEHICLE_TYPE" : vehicle_type ,
+                "VEHICLE_COLOR" : color ,
+                "VEHICLE_YEAR" : year ,
+                "ENGINE_NO" : engine_no ,
+                "CHASSIS_NO" : chassis_no ,
+                "OWNER_NAME" : OWNER_NAME ,
+                "OWNER_SIGN" : OWNER_SIGN ,
+                "ATTORNEY_NAME" : ATTORNEY_NAME ,
+                "ATTORNEY_SIGN" : ATTORNEY_SIGN 
             }
             data = json.dumps(dict)   
             cursor = mysql.connection.cursor() 
@@ -477,9 +521,6 @@ def save_form(form_id):
                 mysql.connection.commit()
             cursor.execute('INSERT into form_entries (form_id,user_id,data) VALUES (%s,%s,%s);',(form_id,session['userid'],data))
             mysql.connection.commit()
-
-            
-
             # now hit api 
             data = {
                 "country":country,
@@ -514,6 +555,10 @@ def save_form(form_id):
                 print("Error with status code:", response.status_code)
 
             # --
+            # update status to completed 
+            
+            cursor.execute('UPDATE form_entries SET status="completed" where user_id=%s and form_id=%s;',[session['userid'],form_id])            
+            mysql.connection.commit()
 
         # log             
         pathfilename = None
@@ -756,6 +801,14 @@ def process_files():
         cursor = mysql.connection.cursor()
         cursor.execute('SELECT * from pdf_files where userid=%s;',[session['userid']])
         data = cursor.fetchall()
+        cursor.execute('SELECT phone_email_pdf from users where type="admin";')
+        phone_email_pdf = cursor.fetchone()['phone_email_pdf']
+        if phone_email_pdf=="enable":
+            show_contacts = 1
+        elif phone_email_pdf=="disable":
+            show_contacts=2
+        else:
+            show_contacts=1
         if not data:
             return "No data"
     
@@ -769,7 +822,7 @@ def process_files():
             with open(file_path, "rb") as f:
                 file_data = f.read()
             files = {"file": (file, file_data)}
-            data = {"show_contacts": 1}
+            data = {"show_contacts": show_contacts}
             response = requests.post(url, data=data, files=files)
             if response.status_code == 200:
                 filename = file.replace(".pdf","")
